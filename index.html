@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StopotS Arabic - Ahmed Admin</title>
+    <title>لعبة الاساطير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { --main-bg: #5d5fef; --sidebar-bg: #4a4cb2; --card-bg: #8c8ef9; --accent: #00ffcc; }
@@ -222,10 +222,10 @@
 
             if(isAdmin) {
                 scoreBtns.innerHTML += `<div style="background:rgba(255,255,255,0.1); padding:5px; border-radius:10px; text-align:center;">
-                    <button class="btn" onclick="awardPoints('${player.id}', 0)" style="background:#eee; padding:4px 10px; font-size:10px;">نحديث الجدول</button>
                     <div style="font-size:10px; margin-bottom:5px;">${player.name}</div>
                     <button class="btn" onclick="awardPoints('${player.id}', 20)" style="background:#ffc107; padding:4px 10px; font-size:10px;">+20</button>
                     <button class="btn" onclick="awardPoints('${player.id}', 10)" style="background:#eee; padding:4px 10px; font-size:10px;">+10</button>
+                    <button class="btn" onclick="awardPoints('${player.id}', 0)" style="background:#eee; padding:4px 10px; font-size:10px;">تحديث</button>
                 </div>`;
             }
         });
