@@ -141,55 +141,47 @@
     let localLastCountdown = -1;
 
     // --- مراقب حالة اللعبة (Logic) ---
-    onValue(ref(db, 'game'), (snapshot) => {
-        const data = snapshot.val();
-        if(!data) return;
+let gameStatus = "waiting";
 
-        const inputs = document.querySelectorAll('.grid-categories input');
+onValue(ref(db, 'game'), (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
 
-        if (data.status === "countdown") {
-            document.getElementById('resultsTable').style.display = 'none'; // إخفاء النتائج عند بدء عد جديد
-            document.getElementById('mainLetter').innerText = data.countdown;
-            document.getElementById('mainLetter').style.color = "#ff4757";
-            document.getElementById('statusText').innerText = "استعد...";
-            
-            if(data.countdown !== localLastCountdown && data.countdown > 0) {
-                sounds.tick.currentTime = 0;
-                sounds.tick.play();
-                localLastCountdown = data.countdown;
-            }
-            inputs.forEach(i => i.disabled = true);
-        } 
-        else if (data.status === "playing") {
-            document.getElementById('mainLetter').innerText = data.currentLetter;
-            document.getElementById('mainLetter').style.color = "#00ffcc";
-            document.getElementById('statusText').innerText = "العب بسرعة!";
-            document.getElementById('resultsTable').style.display = 'none';
-            inputs.forEach(i => { 
-                i.disabled = false; 
-                if(data.timeLeft == 20) i.value = ""; 
-            });
-        } 
-        else if (data.status === "stopped") {
-            if(lastStatus === "playing") {
-                sounds.stop.play();
-                uploadMyAnswers();
-            }
-            document.getElementById('mainLetter').innerText = "؟";
-            document.getElementById('statusText').innerText = "انتهى الوقت!";
-            inputs.forEach(i => i.disabled = true);
-            document.getElementById('resultsTable').style.display = 'block'; // إظهار الجدول فوراً
-        } else {
-            document.getElementById('mainLetter').innerText = "؟";
-            inputs.forEach(i => i.disabled = true);
-            document.getElementById('statusText').innerText = "بانتظار المسؤول...";
-        }
+    gameStatus = data.status;
 
-        document.getElementById('gameTimer').innerText = data.timeLeft + "s";
-        document.getElementById('roundDisplay').innerText = data.round || 1;
-        document.getElementById('roundNumHeader').innerText = (data.round || 1) + "/10";
-        lastStatus = data.status;
-    });
+    document.getElementById('gameTimer').innerText = data.timeLeft + "s";
+
+    const inputs = document.querySelectorAll('.grid-categories input');
+
+    if (data.status === "countdown") {
+        document.getElementById('resultsTable').style.display = 'none';
+        inputs.forEach(i => i.disabled = true);
+    }
+
+    if (data.status === "playing") {
+        document.getElementById('mainLetter').innerText = data.currentLetter;
+        document.getElementById('statusText').innerText = "العب بسرعة!";
+        inputs.forEach(i => i.disabled = false);
+        document.getElementById('resultsTable').style.display = 'none';
+    }
+
+    if (data.status === "stopped") {
+        document.getElementById('statusText').innerText = "انتهى الوقت!";
+        inputs.forEach(i => i.disabled = true);
+
+        // إرسال الإجابات مرة واحدة فقط
+        uploadMyAnswers();
+
+        document.getElementById('resultsTable').style.display = 'block';
+    }
+
+    if (data.status === "waiting") {
+        document.getElementById('mainLetter').innerText = "؟";
+        inputs.forEach(i => i.disabled = true);
+        document.getElementById('resultsTable').style.display = 'none';
+    }
+});
+
 
     // --- مراقب اللاعبين والنتائج ---
 onValue(ref(db, 'players'), (snapshot) => {
@@ -275,23 +267,6 @@ document.getElementById('forceShowResults').onclick = async () => {
     // 3. محاكاة تحديث قائمة اللاعبين لضمان ظهور الأسماء
     console.log("تم إجبار ظهور الجدول بنجاح");
 };
-
-// تأكد أن مراقب الحالة (onValue) يعرض الجدول دائماً إذا كانت الحالة stopped
-onValue(ref(db, 'game'), (snapshot) => {
-    const data = snapshot.val();
-    if(!data) return;
-    
-    // ... الكود السابق ...
-
-// داخل onValue(ref(db, 'game'), ...)
-if (data.status === "stopped") {
-    document.getElementById('resultsTable').style.display = 'block';
-    // التأكد من إرسال إجابات اللاعبين قبل عرض الجدول
-    uploadMyAnswers(); 
-}
-    
-    // ... بقية الكود ...
-});
 
     // --- وظائف المسؤول (Admin Functions) ---
     window.adminStartRound = async function() {
