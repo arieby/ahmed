@@ -85,12 +85,15 @@
             <div class="category-box"><label>بلاد</label><input type="text" id="country" disabled></div>
         </div>
 
-        <div id="adminPanel" class="admin-panel">
-            <h4>لوحة المسؤول (أحمد)</h4>
-            <button class="btn btn-start" id="startBtn">ابدأ الجولة 🚀</button>
-            <button class="btn" id="resetBtn" style="background: #ff4757; color: white; width: 100%;">إعادة ضبط اللعبة 🔄</button>
-            <div id="scoringButtons" style="margin-top:15px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px;"></div>
-        </div>
+<div id="adminPanel" class="admin-panel">
+    <h4>لوحة المسؤول (أحمد)</h4>
+    <button class="btn btn-start" id="startBtn">ابدأ الجولة 🚀</button>
+    
+    <button class="btn" id="forceShowResults" style="background: #6c5ce7; color: white; width: 100%; margin-bottom: 10px;">إظهار الجدول يدوياً 🔍</button>
+    
+    <button class="btn" id="resetBtn" style="background: #ff4757; color: white; width: 100%;">إعادة ضبط اللعبة 🔄</button>
+    <div id="scoringButtons" style="margin-top:15px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px;"></div>
+</div>
 
         <div id="resultsTable" style="display:none; margin-top:30px; width:95%; background:rgba(0,0,0,0.2); padding:20px; border-radius:20px;">
             <h3 style="text-align:center; margin-top:0;">مراجعة إجابات اللاعبين 🔍</h3>
@@ -237,6 +240,33 @@
         };
         update(ref(db, `players/${playerRef.key}`), { answers: ans });
     }
+
+    // وظيفة إجبار ظهور الجدول (توضع داخل السكربت)
+window.forceResults = () => {
+    // نغير الحالة في قاعدة البيانات لتصبح stopped عند الجميع
+    update(ref(db, 'game'), { status: "stopped", timeLeft: 0 });
+    alert("تم طلب إظهار الجدول عند الجميع!");
+};
+
+// ربط الزر بالوظيفة
+document.getElementById('forceShowResults').onclick = forceResults;
+
+// تأكد أن مراقب الحالة (onValue) يعرض الجدول دائماً إذا كانت الحالة stopped
+onValue(ref(db, 'game'), (snapshot) => {
+    const data = snapshot.val();
+    if(!data) return;
+    
+    // ... الكود السابق ...
+
+    if (data.status === "stopped") {
+        document.getElementById('resultsTable').style.display = 'block';
+        // نجبر المدخلات على الإغلاق وإرسال الإجابات
+        document.querySelectorAll('.grid-categories input').forEach(i => i.disabled = true);
+        uploadMyAnswers(); 
+    }
+    
+    // ... بقية الكود ...
+});
 
     // --- وظائف المسؤول (Admin Functions) ---
     window.adminStartRound = async function() {
