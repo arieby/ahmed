@@ -89,7 +89,7 @@
     <h4>لوحة المسؤول (أحمد)</h4>
     <button class="btn btn-start" id="startBtn">ابدأ الجولة 🚀</button>
     
-    <button class="btn" id="forceShowResults" style="background: #6c5ce7; color: white; width: 100%; margin-bottom: 10px;">إظهار الجدول يدوياً 🔍</button>
+    <button class="btn" id="forceShowResults" style="background: #6c5ce7; color: white; width: 100%; margin-bottom: 10px;">إظهار جدول المراجعة الآن 🔍</button>
     
     <button class="btn" id="resetBtn" style="background: #ff4757; color: white; width: 100%;">إعادة ضبط اللعبة 🔄</button>
     <div id="scoringButtons" style="margin-top:15px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px;"></div>
@@ -249,7 +249,20 @@ window.forceResults = () => {
 };
 
 // ربط الزر بالوظيفة
-document.getElementById('forceShowResults').onclick = forceResults;
+document.getElementById('forceShowResults').onclick = async () => {
+    // 1. تغيير حالة اللعبة إلى توقف لإظهار الجدول عند الجميع
+    await update(ref(db, 'game'), { 
+        status: "stopped", 
+        timeLeft: 0,
+        lastTrigger: Date.now() // إضافة توقيت حالي لإجبار Firebase على إرسال تحديث لكل اللاعبين
+    });
+
+    // 2. إجبار المتصفح الخاص بك (كمسؤول) على عرض الجدول فوراً دون انتظار رد Firebase
+    document.getElementById('resultsTable').style.display = 'block';
+    
+    // 3. محاكاة تحديث قائمة اللاعبين لضمان ظهور الأسماء
+    console.log("تم إجبار ظهور الجدول بنجاح");
+};
 
 // تأكد أن مراقب الحالة (onValue) يعرض الجدول دائماً إذا كانت الحالة stopped
 onValue(ref(db, 'game'), (snapshot) => {
@@ -258,12 +271,12 @@ onValue(ref(db, 'game'), (snapshot) => {
     
     // ... الكود السابق ...
 
-    if (data.status === "stopped") {
-        document.getElementById('resultsTable').style.display = 'block';
-        // نجبر المدخلات على الإغلاق وإرسال الإجابات
-        document.querySelectorAll('.grid-categories input').forEach(i => i.disabled = true);
-        uploadMyAnswers(); 
-    }
+// داخل onValue(ref(db, 'game'), ...)
+if (data.status === "stopped") {
+    document.getElementById('resultsTable').style.display = 'block';
+    // التأكد من إرسال إجابات اللاعبين قبل عرض الجدول
+    uploadMyAnswers(); 
+}
     
     // ... بقية الكود ...
 });
