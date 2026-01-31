@@ -102,192 +102,204 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, push, onDisconnect, get } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-database.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, push, onDisconnect, get } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCACieEWRf3YtwHPxqbrOVrFwCYjnfFX4I",
-            authDomain: "arabicstopgame.firebaseapp.com",
-            databaseURL: "https://arabicstopgame-default-rtdb.europe-west1.firebasedatabase.app/",
-            projectId: "arabicstopgame",
-            storageBucket: "arabicstopgame.firebasestorage.app",
-            messagingSenderId: "382758047507",
-            appId: "1:382758047507:web:2c4f49c33ff5d6dd4d14e6"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyCACieEWRf3YtwHPxqbrOVrFwCYjnfFX4I",
+        authDomain: "arabicstopgame.firebaseapp.com",
+        databaseURL: "https://arabicstopgame-default-rtdb.europe-west1.firebasedatabase.app/",
+        projectId: "arabicstopgame",
+        storageBucket: "arabicstopgame.firebasestorage.app",
+        messagingSenderId: "382758047507",
+        appId: "1:382758047507:web:2c4f49c33ff5d6dd4d14e6"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        const sounds = {
-            start: new Audio('https://upload.wikimedia.org/wikipedia/commons/3/3f/Referee_whistle.wav'),
-            stop: new Audio('https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3'),
-            coin: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
-            tick: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
-        };
+    const sounds = {
+        start: new Audio('https://upload.wikimedia.org/wikipedia/commons/3/3f/Referee_whistle.wav'),
+        stop: new Audio('https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3'),
+        coin: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
+        tick: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
+    };
 
-        const myName = prompt("أدخل اسمك:") || "لاعب" + Math.floor(Math.random()*100);
-        const isAdmin = (myName.toLowerCase() === "ahmed");
-        if(isAdmin) document.getElementById('adminPanel').style.display = 'block';
+    const myName = prompt("أدخل اسمك:") || "لاعب" + Math.floor(Math.random()*100);
+    const isAdmin = (myName.toLowerCase() === "ahmed");
+    if(isAdmin) document.getElementById('adminPanel').style.display = 'block';
 
-        const playerRef = push(ref(db, 'players'));
-        set(playerRef, { name: myName, points: 0, isAdmin: isAdmin });
-        onDisconnect(playerRef).remove();
+    const playerRef = push(ref(db, 'players'));
+    set(playerRef, { name: myName, points: 0, isAdmin: isAdmin });
+    onDisconnect(playerRef).remove();
 
-        let lastStatus = "";
-        let localLastCountdown = -1;
+    let lastStatus = "";
+    let localLastCountdown = -1;
 
-        // --- مراقب حالة اللعبة (Logic) ---
-        onValue(ref(db, 'game'), (snapshot) => {
-            const data = snapshot.val();
-            if(!data) return;
+    // --- مراقب حالة اللعبة (Logic) ---
+    onValue(ref(db, 'game'), (snapshot) => {
+        const data = snapshot.val();
+        if(!data) return;
 
-            const inputs = document.querySelectorAll('.grid-categories input');
+        const inputs = document.querySelectorAll('.grid-categories input');
 
-            if (data.status === "countdown") {
-                document.getElementById('mainLetter').innerText = data.countdown;
-                document.getElementById('mainLetter').style.color = "#ff4757";
-                document.getElementById('statusText').innerText = "استعد...";
-                
-                // تشغيل صوت التكتكة عند نقص الرقم
-                if(data.countdown !== localLastCountdown && data.countdown > 0) {
-                    sounds.tick.currentTime = 0;
-                    sounds.tick.play();
-                    localLastCountdown = data.countdown;
-                }
-                inputs.forEach(i => i.disabled = true);
-            } 
-            else if (data.status === "playing") {
-                document.getElementById('mainLetter').innerText = data.currentLetter;
-                document.getElementById('mainLetter').style.color = "#00ffcc";
-                document.getElementById('statusText').innerText = "العب بسرعة!";
-                document.getElementById('resultsTable').style.display = 'none';
-                inputs.forEach(i => { 
-                    i.disabled = false; 
-                    if(data.timeLeft == 20) i.value = ""; 
-                });
-            } 
-            else if (data.status === "stopped") {
-                if(lastStatus === "playing") sounds.stop.play();
-                document.getElementById('mainLetter').innerText = "؟";
-                document.getElementById('statusText').innerText = "انتهى الوقت!";
-                inputs.forEach(i => i.disabled = true);
-                uploadMyAnswers();
-            } else {
-                document.getElementById('mainLetter').innerText = "؟";
-                inputs.forEach(i => i.disabled = true);
-                document.getElementById('statusText').innerText = "بانتظار المسؤول...";
+        if (data.status === "countdown") {
+            document.getElementById('resultsTable').style.display = 'none'; // إخفاء النتائج عند بدء عد جديد
+            document.getElementById('mainLetter').innerText = data.countdown;
+            document.getElementById('mainLetter').style.color = "#ff4757";
+            document.getElementById('statusText').innerText = "استعد...";
+            
+            if(data.countdown !== localLastCountdown && data.countdown > 0) {
+                sounds.tick.currentTime = 0;
+                sounds.tick.play();
+                localLastCountdown = data.countdown;
             }
-
-            document.getElementById('gameTimer').innerText = data.timeLeft + "s";
-            document.getElementById('roundDisplay').innerText = data.round || 1;
-            document.getElementById('roundNumHeader').innerText = (data.round || 1) + "/10";
-            lastStatus = data.status;
-        });
-
-        // --- مراقب اللاعبين والنتائج ---
-        onValue(ref(db, 'players'), (snapshot) => {
-            const list = document.getElementById('playersList');
-            const scoreBtns = document.getElementById('scoringButtons');
-            const answersGrid = document.getElementById('answersGrid');
-            list.innerHTML = ""; scoreBtns.innerHTML = ""; answersGrid.innerHTML = "";
-
-            const data = snapshot.val();
-            if (!data) return;
-
-            let playersArray = Object.keys(data).map(id => ({ id, ...data[id] })).sort((a,b) => b.points - a.points);
-
-            playersArray.forEach(player => {
-                list.innerHTML += `<div class="player-item ${player.isAdmin?'is-admin':''}"><span>👤 ${player.name}</span><b>⭐ ${player.points}</b></div>`;
-                
-                if(player.answers && lastStatus === "stopped") {
-                    document.getElementById('resultsTable').style.display = 'block';
-                    answersGrid.innerHTML += `
-                        <div style="display: flex; gap: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 5px; align-items: center;">
-                            <div style="min-width:80px; color:#ffc107; font-weight:bold; font-size:12px;">${player.name}</div>
-                            <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${player.answers.name || '-'}</div>
-                            <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${player.answers.animal || '-'}</div>
-                            <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${player.answers.plant || '-'}</div>
-                            <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${player.answers.object || '-'}</div>
-                            <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${player.answers.country || '-'}</div>
-                        </div>`;
-                }
-
-                if(isAdmin) {
-                    scoreBtns.innerHTML += `<div style="background:rgba(255,255,255,0.1); padding:5px; border-radius:10px; text-align:center;">
-                        <div style="font-size:10px; margin-bottom:5px;">${player.name}</div>
-                        <button class="btn" onclick="awardPoints('${player.id}', 20)" style="background:#ffc107; padding:4px 10px; font-size:10px;">+20</button>
-                        <button class="btn" onclick="awardPoints('${player.id}', 10)" style="background:#eee; padding:4px 10px; font-size:10px;">+10</button>
-                    </div>`;
-                }
+            inputs.forEach(i => i.disabled = true);
+        } 
+        else if (data.status === "playing") {
+            document.getElementById('mainLetter').innerText = data.currentLetter;
+            document.getElementById('mainLetter').style.color = "#00ffcc";
+            document.getElementById('statusText').innerText = "العب بسرعة!";
+            document.getElementById('resultsTable').style.display = 'none';
+            inputs.forEach(i => { 
+                i.disabled = false; 
+                if(data.timeLeft == 20) i.value = ""; 
             });
-        });
-
-        function uploadMyAnswers() {
-            const ans = {
-                name: document.getElementById('name').value,
-                animal: document.getElementById('animal').value,
-                plant: document.getElementById('plant').value,
-                object: document.getElementById('object').value,
-                country: document.getElementById('country').value
-            };
-            update(ref(db, `players/${playerRef.key}`), { answers: ans });
+        } 
+        else if (data.status === "stopped") {
+            if(lastStatus === "playing") {
+                sounds.stop.play();
+                uploadMyAnswers();
+            }
+            document.getElementById('mainLetter').innerText = "؟";
+            document.getElementById('statusText').innerText = "انتهى الوقت!";
+            inputs.forEach(i => i.disabled = true);
+            document.getElementById('resultsTable').style.display = 'block'; // إظهار الجدول فوراً
+        } else {
+            document.getElementById('mainLetter').innerText = "؟";
+            inputs.forEach(i => i.disabled = true);
+            document.getElementById('statusText').innerText = "بانتظار المسؤول...";
         }
 
-        // --- وظائف المسؤول (Admin Functions) ---
-        window.adminStartRound = async function() {
-            const letters = "أبتثجحخدذرزسشصضطظعغفقكلمنهوي";
-            const rand = letters[Math.floor(Math.random() * letters.length)];
-            const snap = await get(ref(db, 'game/round'));
-            const nextR = (snap.val() || 0) + 1;
+        document.getElementById('gameTimer').innerText = data.timeLeft + "s";
+        document.getElementById('roundDisplay').innerText = data.round || 1;
+        document.getElementById('roundNumHeader').innerText = (data.round || 1) + "/10";
+        lastStatus = data.status;
+    });
 
-            let startCountdown = 5;
-            update(ref(db, 'game'), { status: "countdown", countdown: startCountdown, round: nextR });
+    // --- مراقب اللاعبين والنتائج ---
+    onValue(ref(db, 'players'), (snapshot) => {
+        const list = document.getElementById('playersList');
+        const scoreBtns = document.getElementById('scoringButtons');
+        const answersGrid = document.getElementById('answersGrid');
+        list.innerHTML = ""; scoreBtns.innerHTML = ""; answersGrid.innerHTML = "";
 
-            let countdownTimer = setInterval(() => {
-                startCountdown--;
-                update(ref(db, 'game'), { countdown: startCountdown });
+        const data = snapshot.val();
+        if (!data) return;
 
-                if (startCountdown <= 0) {
-                    clearInterval(countdownTimer);
-                    sounds.start.play();
-                    update(ref(db, 'game'), { currentLetter: rand, status: "playing", timeLeft: 20 });
+        let playersArray = Object.keys(data).map(id => ({ id, ...data[id] })).sort((a,b) => b.points - a.points);
 
-                    let gameCount = 20;
-                    let gameTimer = setInterval(() => {
-                        gameCount--;
-                        update(ref(db, 'game'), { timeLeft: gameCount });
-                        if (gameCount <= 0) {
-                            clearInterval(gameTimer);
-                            update(ref(db, 'game'), { status: "stopped" });
-                        }
-                    }, 1000);
-                }
-            }, 1000);
-        };
-
-        window.awardPoints = (pId, amt) => {
-            sounds.coin.play();
-            get(ref(db, `players/${pId}/points`)).then(s => update(ref(db, `players/${pId}`), { points: (s.val() || 0) + amt }));
-        };
-
-        window.resetFullGame = async () => {
-            if(!confirm("هل تريد تصفير النقاط والجولات للجميع؟")) return;
-            await update(ref(db, 'game'), { currentLetter: "؟", status: "waiting", timeLeft: 20, round: 1 });
-            const pSnap = await get(ref(db, 'players'));
-            if(pSnap.exists()){
-                const upd = {}; 
-                Object.keys(pSnap.val()).forEach(id => {
-                    upd[`players/${id}/points`] = 0;
-                    upd[`players/${id}/answers`] = null;
-                });
-                update(ref(db), upd);
+        playersArray.forEach(player => {
+            list.innerHTML += `<div class="player-item ${player.isAdmin?'is-admin':''}"><span>👤 ${player.name}</span><b>⭐ ${player.points}</b></div>`;
+            
+            // تعديل شرط عرض الإجابات ليكون أكثر مرونة
+            if(lastStatus === "stopped") {
+                const ans = player.answers || {};
+                answersGrid.innerHTML += `
+                    <div style="display: flex; gap: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 5px; align-items: center;">
+                        <div style="min-width:80px; color:#ffc107; font-weight:bold; font-size:12px;">${player.name}</div>
+                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.name || '-'}</div>
+                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.animal || '-'}</div>
+                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.plant || '-'}</div>
+                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.object || '-'}</div>
+                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.country || '-'}</div>
+                    </div>`;
             }
-        };
 
-        document.getElementById('startBtn').onclick = adminStartRound;
-        document.getElementById('resetBtn').onclick = resetFullGame;
-        document.getElementById('btnShare').onclick = () => { navigator.clipboard.writeText(window.location.href); alert("تم نسخ رابط الغرفة!"); };
-    </script>
+            if(isAdmin) {
+                scoreBtns.innerHTML += `<div style="background:rgba(255,255,255,0.1); padding:5px; border-radius:10px; text-align:center;">
+                    <div style="font-size:10px; margin-bottom:5px;">${player.name}</div>
+                    <button class="btn" onclick="awardPoints('${player.id}', 20)" style="background:#ffc107; padding:4px 10px; font-size:10px;">+20</button>
+                    <button class="btn" onclick="awardPoints('${player.id}', 10)" style="background:#eee; padding:4px 10px; font-size:10px;">+10</button>
+                </div>`;
+            }
+        });
+    });
+
+    function uploadMyAnswers() {
+        const ans = {
+            name: document.getElementById('name').value,
+            animal: document.getElementById('animal').value,
+            plant: document.getElementById('plant').value,
+            object: document.getElementById('object').value,
+            country: document.getElementById('country').value
+        };
+        update(ref(db, `players/${playerRef.key}`), { answers: ans });
+    }
+
+    // --- وظائف المسؤول (Admin Functions) ---
+    window.adminStartRound = async function() {
+        // تصفير الإجابات السابقة قبل البدء
+        const pSnap = await get(ref(db, 'players'));
+        if(pSnap.exists()){
+            const clearUpd = {};
+            Object.keys(pSnap.val()).forEach(id => clearUpd[`players/${id}/answers`] = null);
+            await update(ref(db), clearUpd);
+        }
+
+        const letters = "أبتثجحخدذرزسشصضطظعغفقكلمنهوي";
+        const rand = letters[Math.floor(Math.random() * letters.length)];
+        const snap = await get(ref(db, 'game/round'));
+        const nextR = (snap.val() || 0) + 1;
+
+        let startCountdown = 5;
+        update(ref(db, 'game'), { status: "countdown", countdown: startCountdown, round: nextR });
+
+        let countdownTimer = setInterval(() => {
+            startCountdown--;
+            update(ref(db, 'game'), { countdown: startCountdown });
+
+            if (startCountdown <= 0) {
+                clearInterval(countdownTimer);
+                sounds.start.play();
+                update(ref(db, 'game'), { currentLetter: rand, status: "playing", timeLeft: 20 });
+
+                let gameCount = 20;
+                let gameTimer = setInterval(() => {
+                    gameCount--;
+                    update(ref(db, 'game'), { timeLeft: gameCount });
+                    if (gameCount <= 0) {
+                        clearInterval(gameTimer);
+                        update(ref(db, 'game'), { status: "stopped" });
+                    }
+                }, 1000);
+            }
+        }, 1000);
+    };
+
+    window.awardPoints = (pId, amt) => {
+        sounds.coin.play();
+        get(ref(db, `players/${pId}/points`)).then(s => update(ref(db, `players/${pId}`), { points: (s.val() || 0) + amt }));
+    };
+
+    window.resetFullGame = async () => {
+        if(!confirm("هل تريد تصفير النقاط والجولات للجميع؟")) return;
+        await update(ref(db, 'game'), { currentLetter: "؟", status: "waiting", timeLeft: 20, round: 1 });
+        const pSnap = await get(ref(db, 'players'));
+        if(pSnap.exists()){
+            const upd = {}; 
+            Object.keys(pSnap.val()).forEach(id => {
+                upd[`players/${id}/points`] = 0;
+                upd[`players/${id}/answers`] = null;
+            });
+            update(ref(db), upd);
+        }
+    };
+
+    document.getElementById('startBtn').onclick = adminStartRound;
+    document.getElementById('resetBtn').onclick = resetFullGame;
+    document.getElementById('btnShare').onclick = () => { navigator.clipboard.writeText(window.location.href); alert("تم نسخ رابط الغرفة!"); };
+</script>
 </body>
 </html>
