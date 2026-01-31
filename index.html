@@ -192,44 +192,55 @@
     });
 
     // --- مراقب اللاعبين والنتائج ---
-    onValue(ref(db, 'players'), (snapshot) => {
-        const list = document.getElementById('playersList');
-        const scoreBtns = document.getElementById('scoringButtons');
-        const answersGrid = document.getElementById('answersGrid');
-        list.innerHTML = ""; scoreBtns.innerHTML = ""; answersGrid.innerHTML = "";
+onValue(ref(db, 'players'), (snapshot) => {
+    const list = document.getElementById('playersList');
+    const scoreBtns = document.getElementById('scoringButtons');
+    const answersGrid = document.getElementById('answersGrid');
 
-        const data = snapshot.val();
-        if (!data) return;
+    list.innerHTML = "";
+    scoreBtns.innerHTML = "";
+    answersGrid.innerHTML = "";
 
-        let playersArray = Object.keys(data).map(id => ({ id, ...data[id] })).sort((a,b) => b.points - a.points);
+    const data = snapshot.val();
+    if (!data) return;
 
-        playersArray.forEach(player => {
-            list.innerHTML += `<div class="player-item ${player.isAdmin?'is-admin':''}"><span>👤 ${player.name}</span><b>⭐ ${player.points}</b></div>`;
-            
-            // تعديل شرط عرض الإجابات ليكون أكثر مرونة
-            if(lastStatus === "stopped") {
-                const ans = player.answers || {};
-                answersGrid.innerHTML += `
-                    <div style="display: flex; gap: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 5px; align-items: center;">
-                        <div style="min-width:80px; color:#ffc107; font-weight:bold; font-size:12px;">${player.name}</div>
-                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.name || '-'}</div>
-                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.animal || '-'}</div>
-                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.plant || '-'}</div>
-                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.object || '-'}</div>
-                        <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center; font-size:14px; font-weight:bold;">${ans.country || '-'}</div>
-                    </div>`;
-            }
+    let playersArray = Object.keys(data)
+        .map(id => ({ id, ...data[id] }))
+        .sort((a,b) => b.points - a.points);
 
-            if(isAdmin) {
-                scoreBtns.innerHTML += `<div style="background:rgba(255,255,255,0.1); padding:5px; border-radius:10px; text-align:center;">
-                    <div style="font-size:10px; margin-bottom:5px;">${player.name}</div>
-                    <button class="btn" onclick="awardPoints('${player.id}', 20)" style="background:#ffc107; padding:4px 10px; font-size:10px;">+20</button>
-                    <button class="btn" onclick="awardPoints('${player.id}', 10)" style="background:#eee; padding:4px 10px; font-size:10px;">+10</button>
-                    <button class="btn" onclick="awardPoints('${player.id}', 0)" style="background:#eee; padding:4px 10px; font-size:10px;">تحديث</button>
-                </div>`;
-            }
-        });
+    playersArray.forEach(player => {
+
+        list.innerHTML += `
+        <div class="player-item ${player.isAdmin?'is-admin':''}">
+            <span>👤 ${player.name}</span>
+            <b>⭐ ${player.points}</b>
+        </div>`;
+
+        /* ✅ هنا الإصلاح الحقيقي */
+        if(gameStatus === "stopped") {
+            const ans = player.answers || {};
+            answersGrid.innerHTML += `
+            <div style="display:flex; gap:10px; padding:10px; background:rgba(255,255,255,0.1); border-radius:10px; margin-bottom:5px; align-items:center;">
+                <div style="min-width:80px; color:#ffc107; font-weight:bold; font-size:12px;">${player.name}</div>
+                <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center;">${ans.name || '-'}</div>
+                <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center;">${ans.animal || '-'}</div>
+                <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center;">${ans.plant || '-'}</div>
+                <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center;">${ans.object || '-'}</div>
+                <div style="flex:1; background:white; color:black; padding:8px; border-radius:5px; text-align:center;">${ans.country || '-'}</div>
+            </div>`;
+        }
+
+        if(isAdmin) {
+            scoreBtns.innerHTML += `
+            <div style="background:rgba(255,255,255,0.1); padding:5px; border-radius:10px; text-align:center;">
+                <div style="font-size:10px; margin-bottom:5px;">${player.name}</div>
+                <button class="btn" onclick="awardPoints('${player.id}', 20)" style="background:#ffc107; padding:4px 10px; font-size:10px;">+20</button>
+                <button class="btn" onclick="awardPoints('${player.id}', 10)" style="background:#eee; padding:4px 10px; font-size:10px;">+10</button>
+            </div>`;
+        }
     });
+});
+
 
     function uploadMyAnswers() {
         const ans = {
