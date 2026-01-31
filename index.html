@@ -222,6 +222,7 @@
 
             if(isAdmin) {
                 scoreBtns.innerHTML += `<div style="background:rgba(255,255,255,0.1); padding:5px; border-radius:10px; text-align:center;">
+                    <button class="btn" onclick="awardPoints('${player.id}', 0)" style="background:#eee; padding:4px 10px; font-size:10px;">نحديث الجدول</button>
                     <div style="font-size:10px; margin-bottom:5px;">${player.name}</div>
                     <button class="btn" onclick="awardPoints('${player.id}', 20)" style="background:#ffc107; padding:4px 10px; font-size:10px;">+20</button>
                     <button class="btn" onclick="awardPoints('${player.id}', 10)" style="background:#eee; padding:4px 10px; font-size:10px;">+10</button>
