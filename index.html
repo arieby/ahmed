@@ -222,7 +222,7 @@ function uploadMyAnswers() {
             await update(ref(db), clearUpd);
         }
 
-        const letters = "أبتثجحخدذرزسشصضطظعغفقكلمنهوي";
+        const letters = "أبتثجحدذرزسشصضطظعغفقكلمنوي";
         const rand = letters[Math.floor(Math.random() * letters.length)];
         const snap = await get(ref(db, 'game/round'));
         const nextR = (snap.val() || 0) + 1;
@@ -275,3 +275,4 @@ function uploadMyAnswers() {
 </script>
 </body>
 </html>
+
